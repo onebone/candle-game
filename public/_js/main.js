@@ -57,13 +57,12 @@ function Game(){
 
 	this.tick = 0;
 	this.maxTick = secondsToTick(GAME_SECONDS);
-	this.changeStatus(STATUS_PREVIEW);
 	this.candles = [];
 	this.bar = new StatusBar();
 	this.player = new Player(this);
 	this.health = new Health();
 
-	this.score = 0;
+	this.changeStatus(STATUS_PREVIEW);
 
 	this.field = {
 		left: window.innerWidth * (1/15),
@@ -163,8 +162,15 @@ Game.prototype.update = function(){
 };
 
 Game.prototype.changeStatus = function(status){
+	if(this.status === status) return;
 	this.status = status;
 	this.tick = 0;
+
+	if(this.status === STATUS_PREVIEW){
+		this.health.health = MAX_HEALTH;
+		this.bar.set(0);
+		this.score = 0;
+	}
 };
 
 Game.prototype.countdown = function(sec){
