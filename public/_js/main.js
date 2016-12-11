@@ -30,8 +30,8 @@ var LEVELS = [
 		max: 65,
 	},
 	{ // 5
-		speed: 11,
-		max: 85
+		speed: 10,
+		max: 80
 	}
 ];
 
@@ -215,6 +215,8 @@ Game.prototype.showResult = function(){
 	ctx.fillStyle = 'yellow';
 	ctx.fillRect(this.field.left, this.field.top, this.field.right - this.field.left, this.field.bottom - this.field.top);
 	ctx.fillStyle = 'white';
+
+	setFontSize(100);
 	ctx.fillText(this.score + '', window.innerWidth/2, window.innerHeight/2);
 };
 
@@ -228,6 +230,10 @@ Game.prototype.draw = function(){
 	ctx.lineTo(this.field.left, this.field.top);
 	ctx.strokeStyle = 'red';
 	ctx.stroke();
+
+	ctx.fillStyle = 'black';
+	setFontSize(50);
+	ctx.fillText(this.score + '', window.innerWidth - 100, 50);
 };
 
 function Player(game){
@@ -258,6 +264,7 @@ Player.prototype.tick = function(){
 	this.game.health.immortal--;
 
 	var that = this;
+	var distance = [];
 	this.game.candles.forEach(function(candle){
 		if(that.game.health.immortal <= 0 && that.game.status === STATUS_ONGOING){
 			if(candle.boundingBox.collidesWith(that.boundingBox)){
@@ -270,7 +277,16 @@ Player.prototype.tick = function(){
 				that.game.health.immortal = secondsToTick(IMMORTAL_SECONDS);
 			}
 		}
+
+		distance.push(candle.vec.distance(that.vec));
 	});
+
+	if(this.game.tick % secondsToTick(1) === 0){
+		distance.sort();
+		for(var i = 0; i < Math.min(3, distance.length); i++){
+			this.game.score += Math.ceil(distance[i] * 0.25);
+		}
+	}
 };
 
 Player.prototype.draw = function(){
@@ -425,6 +441,10 @@ Vector2.prototype.add = function(x, y){
 Vector2.prototype.set = function(x, y){
 	this.x = x || 0;
 	this.y = y || 0;
+};
+
+Vector2.prototype.distance = function(vec){
+	return Math.sqrt(Math.pow(vec.x - this.x, 2) + Math.pow(vec.y - this.y, 2));
 };
 
 function BoundingBox(minX, minY, maxX, maxY){
