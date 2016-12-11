@@ -21,7 +21,7 @@ document.onmousemove = function(e){
 };
 
 var canvas = null, ctx = null;
-var games = [];
+var game = null;
 
 window.onload = function(){
 	canvas = document.getElementById('main');
@@ -30,23 +30,34 @@ window.onload = function(){
 
     ctx = canvas.getContext('2d');
 
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+
 	setInterval(update, UPDATE_INTERVAL);
 
-	new Game().start();
+	new Game();
+
+	document.addEventListener('keydown', function(){
+		if(game.status === STATUS_PREVIEW){
+			game.start();
+		}
+	});
 };
 
 function update(){
-	games.forEach(function(game){
-		game.update();
-	});
+	//games.forEach(function(game){
+	//	game.update();
+	//});
+	game.update();
 }
 
 function Game(){
-	games.push(this);
+	//games.push(this);
+	game = this;
 
 	this.tick = 0;
 	this.maxTick = secondsToTick(GAME_SECONDS);
-	this.status = STATUS_PREVIEW;
+	this.changeStatus(STATUS_PREVIEW);
 	this.candles = [];
 	this.bar = new StatusBar();
 	this.player = new Player(this);
@@ -63,59 +74,18 @@ function Game(){
 }
 
 Game.prototype.start = function(){
-	this.status = STATUS_COUNTDOWN;
+	this.changeStatus(STATUS_COUNTDOWN);
 	this.tick = 0;
 };
 
 Game.prototype.update = function(){
 	this.tick++;
-	if(this.status === STATUS_COUNTDOWN){
-		var seconds = 3 - tickToSeconds(this.tick);
-		console.log(seconds);
-		if(seconds <= 0){
-			this.status = STATUS_ONGOING;
-			this.tick = 0;
-		}else{
-			ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-			this.countdown(seconds);
-
-			this.draw();
-			this.bar.draw();
-			this.health.draw();
-		}
-		return;
-	}else if(this.status === STATUS_REVIEW){
-		ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-
-		this.draw();
-		this.bar.draw();
-		this.health.draw();
-
-		this.showResult();
-		return;
-	}
 
 	ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
 	this.draw();
 
-	this.bar.set(this.tick / this.maxTick * 100);
-	this.bar.draw();
-
-	this.health.draw();
-
-	var that = this;
-	this.candles.forEach(function(candle, index){
-		candle.tick();
-
-		if(candle.to.x === candle.vec.x && candle.to.y === candle.vec.y){
-			that.candles.splice(index, 1);
-		}
-	});
-
-	this.player.tick();
-
-	if(this.candles.length < MAX_CANDLES && Math.random() < 0.5){ // 50%
+	if(this.status !== STATUS_COUNTDOWN && this.candles.length < MAX_CANDLES && Math.random() < 0.5){ // 50%
 		var random = Math.random();
 
 		if(random < 0.50){ // 위 혹은 아래에서 출발
@@ -132,12 +102,73 @@ Game.prototype.update = function(){
 				new Vector2(window.innerWidth + x, Math.floor(Math.random() * window.innerHeight))));
 		}
 	}
+
+	this.bar.draw();
+
+	this.health.draw();
+
+	var that = this;
+	this.candles.forEach(function(candle, index){
+		candle.tick();
+
+		if(candle.to.x === candle.vec.x && candle.to.y === candle.vec.y){
+			that.candles.splice(index, 1);
+		}
+	});
+
+	if(this.status === STATUS_COUNTDOWN){
+		var seconds = 3 - tickToSeconds(this.tick);
+
+		this.candles = [];
+
+		if(seconds <= 0){
+			this.changeStatus(STATUS_ONGOING);
+			this.tick = 0;
+		}else{
+			this.countdown(seconds);
+
+			this.draw();
+			this.bar.draw();
+			this.health.draw();
+		}
+		return;
+	}else if(this.status === STATUS_REVIEW){
+		this.draw();
+		this.bar.draw();
+		this.health.draw();
+
+		if(this.tick > secondsToTick(10)){
+			this.changeStatus(STATUS_PREVIEW);
+		}
+
+		this.showResult();
+		return;
+	}else if(this.status === STATUS_PREVIEW){
+		this.draw();
+		this.bar.draw();
+		this.health.draw();
+
+		setFontSize(50);
+		ctx.fillText('시작하려면 아무 키나 누르세요', window.innerWidth/2, window.innerHeight/2);
+		return;
+	}
+
+	this.bar.set(this.tick / this.maxTick * 100);
+	if(this.tick > this.maxTick){
+		this.changeStatus(STATUS_REVIEW);
+		return;
+	}
+
+	this.player.tick();
+};
+
+Game.prototype.changeStatus = function(status){
+	this.status = status;
+	this.tick = 0;
 };
 
 Game.prototype.countdown = function(sec){
-	ctx.font = ctx.font.replace(/\d+px/, "500px");
-	ctx.textAlign = 'center';
-	ctx.textBaseline = 'middle';
+	setFontSize(500);
 	ctx.fillText(Math.ceil(sec) + '', window.innerWidth/2, window.innerHeight/2);
 };
 
@@ -196,7 +227,7 @@ Player.prototype.tick = function(){
 				that.game.health.harm();
 
 				if(that.game.health.health <= 0){
-					that.game.status = STATUS_REVIEW;
+					that.game.changeStatus(STATUS_REVIEW);
 					return;
 				}
 				that.game.health.immortal = secondsToTick(IMMORTAL_SECONDS);
@@ -410,4 +441,8 @@ function secondsToTick(sec){
 
 function tickToSeconds(tick){
 	return tick * UPDATE_INTERVAL / 1000;
+}
+
+function setFontSize(size){
+	ctx.font = ctx.font.replace(/\d+px/, size + 'px');
 }
