@@ -1,6 +1,7 @@
 var MAX_CANDLES = 30;
 var CANDLE_WIDTH = 10;
 var CANDLE_HEIGHT = 60;
+var UPDATE_INTERVAL = 20;
 var deg2rad = Math.PI / 180;
 
 var canvas = null, ctx = null;
@@ -13,7 +14,7 @@ window.onload = function(){
 
     ctx = canvas.getContext('2d');
 
-	setInterval(update, 20);
+	setInterval(update, UPDATE_INTERVAL);
 
 	new Game();
 };
@@ -27,11 +28,19 @@ function update(){
 function Game(){
 	games.push(this);
 
+	this.tick = 0;
+	this.maxTick = 1000 / UPDATE_INTERVAL * 60;
 	this.candles = [];
+	this.bar = new StatusBar();
 }
 
 Game.prototype.update = function(){
+	this.tick++;
+
 	ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+	this.bar.set(this.tick / this.maxTick * 100);
+	this.bar.draw();
 
 	var that = this;
 	this.candles.forEach(function(candle, index){
@@ -67,7 +76,7 @@ function Candle(pos, to){
 
 	this.scale = new Vector2(15, 90);
 
-	this.speed = 7;
+	this.speed = 5;
 
 	this.update();
 }
@@ -126,6 +135,32 @@ Candle.prototype.draw = function(){
 	ctx.lineTo(this.vec.x + CANDLE_WIDTH/2, this.vec.y);
 	ctx.lineTo(this.vec.x + CANDLE_WIDTH, this.vec.y + CANDLE_HEIGHT/7);
 
+	ctx.fillStyle = 'red';
+	ctx.fill();
+};
+
+function StatusBar(){
+	this.status = 0;
+
+	this.vec = new Vector2(window.innerWidth / 4, 10);
+	this.scale = new Vector2(window.innerWidth / 2, 3);
+}
+
+StatusBar.prototype.set = function(v){
+	v = v || 0;
+	this.status = Math.max(0, Math.min(100, v));
+};
+
+StatusBar.prototype.draw = function(){
+	ctx.strokeStyle = 'magenta';
+	ctx.strokeRect(this.vec.x, this.vec.y + this.scale.y, this.scale.x, this.scale.y);
+	ctx.fillStyle = 'magenta';
+	ctx.fillRect(this.vec.x, this.vec.y + this.scale.y, this.scale.x * (this.status / 100), this.scale.y);
+
+	ctx.beginPath();
+	ctx.moveTo(this.vec.x + this.scale.x * (this.status / 100), this.vec.y + this.scale.y + 10);
+	ctx.lineTo(this.vec.x + this.scale.x * (this.status / 100) - 5, this.vec.y + this.scale.y + 18);
+	ctx.lineTo(this.vec.x + this.scale.x * (this.status / 100) + 5, this.vec.y + this.scale.y + 18);
 	ctx.fillStyle = 'red';
 	ctx.fill();
 };
