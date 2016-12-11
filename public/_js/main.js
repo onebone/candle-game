@@ -44,12 +44,21 @@ function Game(){
 	this.bar = new StatusBar();
 	this.player = new Player(this);
 	this.health = new Health();
+
+	this.field = {
+		left: window.innerWidth * (1/15),
+		right: window.innerWidth * (14/15),
+		bottom: window.innerHeight * (7/8),
+		top: window.innerHeight * (1/8)
+	};
 }
 
 Game.prototype.update = function(){
 	this.tick++;
 
 	ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+	this.draw();
 
 	this.bar.set(this.tick / this.maxTick * 100);
 	this.bar.draw();
@@ -86,6 +95,18 @@ Game.prototype.update = function(){
 	}
 };
 
+Game.prototype.draw = function(){
+	// draw field
+	ctx.beginPath();
+	ctx.moveTo(this.field.left, this.field.top);
+	ctx.lineTo(this.field.right, this.field.top);
+	ctx.lineTo(this.field.right, this.field.bottom);
+	ctx.lineTo(this.field.left, this.field.bottom);
+	ctx.lineTo(this.field.left, this.field.top);
+	ctx.strokeStyle = 'red';
+	ctx.stroke();
+};
+
 function Player(game){
 	this.game = game;
 
@@ -102,6 +123,8 @@ Player.prototype.update = function(){
 };
 
 Player.prototype.tick = function(){
+	mouse.x = Math.min(this.game.field.right, Math.max(mouse.x, this.game.field.left));
+	mouse.y = Math.min(this.game.field.bottom, Math.max(mouse.y, this.game.field.top));
 	this.vec.set(mouse.x, mouse.y);
 
 	this.update();
