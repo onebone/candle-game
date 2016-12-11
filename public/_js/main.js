@@ -1,11 +1,10 @@
 var MAX_CANDLES = 30;
-var CANDLE_WIDTH = 15;
-var CANDLE_HEIGHT = 90;
+var CANDLE_WIDTH = 10;
+var CANDLE_HEIGHT = 60;
 var deg2rad = Math.PI / 180;
 
 var canvas = null, ctx = null;
-
-var candles = [];
+var games = [];
 
 window.onload = function(){
 	canvas = document.getElementById('main');
@@ -15,37 +14,52 @@ window.onload = function(){
     ctx = canvas.getContext('2d');
 
 	setInterval(update, 20);
+
+	new Game();
 };
 
 function update(){
+	games.forEach(function(game){
+		game.update();
+	});
+}
+
+function Game(){
+	games.push(this);
+
+	this.candles = [];
+}
+
+Game.prototype.update = function(){
 	ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
-	candles.forEach(function(candle, index){
+	var that = this;
+	this.candles.forEach(function(candle, index){
 		candle.tick();
 
 		if(candle.to.x === candle.vec.x && candle.to.y === candle.vec.y){
-			candles.splice(index, 1);
+			that.candles.splice(index, 1);
 		}
 	});
 
-	if(candles.length < MAX_CANDLES && Math.random() < 0.5){ // 50%
+	if(this.candles.length < MAX_CANDLES && Math.random() < 0.5){ // 50%
 		var random = Math.random();
 
 		if(random < 0.50){ // 위 혹은 아래에서 출발
 			var y = random < 0.25 ? -CANDLE_HEIGHT : window.innerHeight + CANDLE_HEIGHT;
 
-			candles.push(new Candle(new Vector2(Math.floor(Math.random() * window.innerWidth), y),
+			this.candles.push(new Candle(new Vector2(Math.floor(Math.random() * window.innerWidth), y),
 				new Vector2(Math.floor(Math.random() * window.innerWidth), window.innerHeight + y)));
 		}else{ // 왼쪽 혹은 아래에서 출발
 			random -= 0.50;
 
 			var x = random < 0.25 ? -CANDLE_WIDTH : window.innerWidth + CANDLE_WIDTH;
 
-			candles.push(new Candle(new Vector2(x, Math.floor(Math.random() * window.innerHeight)),
+			this.candles.push(new Candle(new Vector2(x, Math.floor(Math.random() * window.innerHeight)),
 				new Vector2(window.innerWidth + x, Math.floor(Math.random() * window.innerHeight))));
 		}
 	}
-}
+};
 
 function Candle(pos, to){
     this.vec = pos;
