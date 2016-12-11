@@ -1,4 +1,4 @@
-var MAX_CANDLES = 40;
+var MAX_CANDLES = 60;
 var CANDLE_WIDTH = 10;
 var CANDLE_HEIGHT = 60;
 var UPDATE_INTERVAL = 20;
@@ -6,6 +6,12 @@ var GAME_SECONDS = 60;
 var MAX_HEALTH = 5;
 var HEART_SIZE = 70;
 var IMMORTAL_SECONDS = 3;
+
+var STATUS_PREVIEW = 0;
+var STATUS_COUNTDOWN = 1;
+var STATUS_ONGOING = 2;
+var STATUS_REVIEW = 3;
+
 var deg2rad = Math.PI / 180;
 
 var mouse = {x: 0, y: 0};
@@ -26,7 +32,7 @@ window.onload = function(){
 
 	setInterval(update, UPDATE_INTERVAL);
 
-	new Game();
+	new Game().start();
 };
 
 function update(){
@@ -40,10 +46,13 @@ function Game(){
 
 	this.tick = 0;
 	this.maxTick = secondsToTick(GAME_SECONDS);
+	this.status = STATUS_PREVIEW;
 	this.candles = [];
 	this.bar = new StatusBar();
 	this.player = new Player(this);
 	this.health = new Health();
+
+	this.score = 0;
 
 	this.field = {
 		left: window.innerWidth * (1/15),
@@ -53,8 +62,38 @@ function Game(){
 	};
 }
 
+Game.prototype.start = function(){
+	this.status = STATUS_COUNTDOWN;
+	this.tick = 0;
+};
+
 Game.prototype.update = function(){
 	this.tick++;
+	if(this.status === STATUS_COUNTDOWN){
+		var seconds = 3 - tickToSeconds(this.tick);
+		console.log(seconds);
+		if(seconds <= 0){
+			this.status = STATUS_ONGOING;
+			this.tick = 0;
+		}else{
+			ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+			this.countdown(seconds);
+
+			this.draw();
+			this.bar.draw();
+			this.health.draw();
+		}
+		return;
+	}else if(this.status === STATUS_REVIEW){
+		ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+		this.draw();
+		this.bar.draw();
+		this.health.draw();
+
+		this.showResult();
+		return;
+	}
 
 	ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
@@ -93,6 +132,22 @@ Game.prototype.update = function(){
 				new Vector2(window.innerWidth + x, Math.floor(Math.random() * window.innerHeight))));
 		}
 	}
+};
+
+Game.prototype.countdown = function(sec){
+	ctx.font = ctx.font.replace(/\d+px/, "500px");
+	ctx.textAlign = 'center';
+	ctx.textBaseline = 'middle';
+	ctx.fillText(Math.ceil(sec) + '', window.innerWidth/2, window.innerHeight/2);
+};
+
+Game.prototype.showResult = function(){
+	if(this.status !== STATUS_REVIEW) return;
+
+	ctx.fillStyle = 'yellow';
+	ctx.fillRect(this.field.left, this.field.top, this.field.right - this.field.left, this.field.bottom - this.field.top);
+	ctx.fillStyle = 'white';
+	ctx.fillText(this.score + '', window.innerWidth/2, window.innerHeight/2);
 };
 
 Game.prototype.draw = function(){
@@ -136,9 +191,14 @@ Player.prototype.tick = function(){
 
 	var that = this;
 	this.game.candles.forEach(function(candle){
-		if(that.game.health.immortal <= 0){
+		if(that.game.health.immortal <= 0 && that.game.status === STATUS_ONGOING){
 			if(candle.boundingBox.collidesWith(that.boundingBox)){
 				that.game.health.harm();
+
+				if(that.game.health.health <= 0){
+					that.game.status = STATUS_REVIEW;
+					return;
+				}
 				that.game.health.immortal = secondsToTick(IMMORTAL_SECONDS);
 				console.log('collide!');
 			}
@@ -156,7 +216,7 @@ function Candle(pos, to){
 
 	this.scale = new Vector2(15, 90);
 
-	this.speed = 5;
+	this.speed = 7;
 
 	this.update();
 }
@@ -346,4 +406,8 @@ BoundingBox.prototype.set = function(minX, minY, maxX, maxY){
 
 function secondsToTick(sec){
 	return 1000 / UPDATE_INTERVAL * sec;
+}
+
+function tickToSeconds(tick){
+	return tick * UPDATE_INTERVAL / 1000;
 }
