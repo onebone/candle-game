@@ -2,8 +2,8 @@ var MAX_CANDLES = 60;
 var CANDLE_WIDTH = 10;
 var CANDLE_HEIGHT = 60;
 var UPDATE_INTERVAL = 20;
-var GAME_SECONDS = 60;
-var MAX_HEALTH = 5;
+var GAME_SECONDS = 120;
+var MAX_HEALTH = 4;
 var HEART_SIZE = 70;
 var IMMORTAL_SECONDS = 3;
 
@@ -11,6 +11,29 @@ var STATUS_PREVIEW = 0;
 var STATUS_COUNTDOWN = 1;
 var STATUS_ONGOING = 2;
 var STATUS_REVIEW = 3;
+
+var LEVELS = [
+	{ // 1
+		speed:  5,
+		max:    45,
+	},
+	{ // 2
+		speed:  6.5,
+		max:    50,
+	},
+	{ // 3
+		speed:  8,
+		max:    60,
+	},
+	{ // 4
+		speed: 9,
+		max: 65,
+	},
+	{ // 5
+		speed: 11,
+		max: 85
+	}
+];
 
 var deg2rad = Math.PI / 180;
 
@@ -107,7 +130,13 @@ Game.prototype.update = function(){
 	this.health.draw();
 
 	var that = this;
+
+	var level = Math.floor(this.tick * LEVELS.length / this.maxTick) % LEVELS.length;
+	MAX_CANDLES = LEVELS[level].max; // FIXME: MAX_CANDLES is not constant
+
 	this.candles.forEach(function(candle, index){
+		candle.speed = LEVELS[level].speed;
+
 		candle.tick();
 
 		if(candle.to.x === candle.vec.x && candle.to.y === candle.vec.y){
@@ -148,6 +177,7 @@ Game.prototype.update = function(){
 		this.health.draw();
 
 		setFontSize(50);
+		ctx.fillStyle = 'black';
 		ctx.fillText('시작하려면 아무 키나 누르세요', window.innerWidth/2, window.innerHeight/2);
 		return;
 	}
@@ -175,6 +205,7 @@ Game.prototype.changeStatus = function(status){
 
 Game.prototype.countdown = function(sec){
 	setFontSize(500);
+	ctx.fillStyle = 'black';
 	ctx.fillText(Math.ceil(sec) + '', window.innerWidth/2, window.innerHeight/2);
 };
 
@@ -237,7 +268,6 @@ Player.prototype.tick = function(){
 					return;
 				}
 				that.game.health.immortal = secondsToTick(IMMORTAL_SECONDS);
-				console.log('collide!');
 			}
 		}
 	});
