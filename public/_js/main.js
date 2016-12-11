@@ -254,6 +254,8 @@ Player.prototype.update = function(){
 Player.prototype.tick = function(){
 	mouse.x = Math.min(this.game.field.right, Math.max(mouse.x, this.game.field.left));
 	mouse.y = Math.min(this.game.field.bottom, Math.max(mouse.y, this.game.field.top));
+	var lastX = this.vec.x;
+	var lastY = this.vec.y;
 	this.vec.set(mouse.x, mouse.y);
 
 	this.update();
@@ -265,9 +267,20 @@ Player.prototype.tick = function(){
 
 	var that = this;
 	var distance = [];
+
+	var minX, maxX;
+	if(lastX - this.vec.x < 0){ // 오른쪽으로 이동
+		minX = lastX - this.scale.x/2;
+		maxX = this.vec.x + this.scale.x/2;
+	}else{
+		minX = this.vec.x - this.scale.x/2;
+		maxX = lastX + this.scale.x/2;
+	}
+
+	var bb = new BoundingBox2(minX, maxX, lastY + this.scale.y/2, lastY - this.scale.y/2, this.vec.y + this.scale.y/2, this.vec.y - this.scale.y/2);
 	this.game.candles.forEach(function(candle){
 		if(that.game.health.immortal <= 0 && that.game.status === STATUS_ONGOING){
-			if(candle.boundingBox.collidesWith(that.boundingBox)){
+			if(bb.collidesWith(candle.boundingBox)){
 				that.game.health.harm();
 
 				if(that.game.health.health <= 0){
@@ -489,6 +502,60 @@ BoundingBox.prototype.set = function(minX, minY, maxX, maxY){
 	this.maxY = maxY || this.maxY;
 
 	return this;
+};
+
+function BoundingBox2(minX, maxX, y1, y2, y3, y4){ //  y1------y4
+	this.minX = minX;                               //  |        |
+	this.maxX = maxX;                               //  y2------y3
+	this.y1 = y1;
+	this.y2 = y2;
+	this.y3 = y3;
+	this.y4 = y4;
+
+	if(this.minX > this.maxX){
+		this.minX = [this.maxX, this.maxX = this.minX][0];
+	}
+
+	if(this.y2 > this.y1){
+		this.y1 = [this.y2, this.y2 = this.y1][0];
+	}
+
+	if(this.y3 > this.y4){
+		this.y3 = [this.y4, this.y4 = this.y3][0];
+	}
+}
+
+/**
+ *
+ * @param bb BoundingBox
+ * @returns {boolean}
+ */
+BoundingBox2.prototype.collidesWith = function(bb){
+	// maxX != minX
+
+	//var y = ((this.y4 - this.y1) / (this.maxX - this.minX)) * (bb.minX - this.minX) + this.y1;
+
+	var checks = [
+		[bb.minX, bb.minY], [bb.maxX, bb.minY],
+		[bb.minX, bb.maxY], [bb.maxX, bb.maxY]
+	];
+	for(var i = 0; i < checks.length; i++){
+		var s1 = (this.y1 - this.y2) * Math.abs(checks[i][0] - this.minX);
+		var s2 = (this.y4 - this.y3) * Math.abs(checks[i][0] - this.maxX);
+
+		var m1 = (this.y4 - this.y1) / (this.maxX - this.minX);
+		var s3 = Math.sqrt(Math.pow(this.maxX - this.minX, 2) + Math.pow(this.y1 - this.y4, 2))
+				* Math.abs(checks[i][0] * m1 - checks[i][1] - this.minX * m1 + this.y1) / Math.sqrt(Math.pow(m1, 2) + 1);
+
+		var m2 = (this.y3 - this.y2) / (this.maxX - this.minX);
+		var s4 = Math.sqrt(Math.pow(this.maxX - this.minX, 2) + Math.pow(this.y3 - this.y2, 2))
+				* Math.abs(checks[i][0] * m2 - checks[i][1] - this.minX * m2 + this.y2) / Math.sqrt(Math.pow(m2, 2) + 2);
+
+		if(s1 + s2 + s3 + s4 <= (this.y1 - this.y2 + this.y4 - this.y3) * (this.maxX - this.minX)){
+			return true;
+		}
+	}
+	return false;
 };
 
 function secondsToTick(sec){
