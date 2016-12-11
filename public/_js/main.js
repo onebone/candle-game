@@ -3,6 +3,9 @@ var CANDLE_WIDTH = 10;
 var CANDLE_HEIGHT = 60;
 var UPDATE_INTERVAL = 20;
 var GAME_SECONDS = 60;
+var MAX_HEALTH = 5;
+var HEART_SIZE = 70;
+var IMMORTAL_SECONDS = 3;
 var deg2rad = Math.PI / 180;
 
 var mouse = {x: 0, y: 0};
@@ -36,10 +39,11 @@ function Game(){
 	games.push(this);
 
 	this.tick = 0;
-	this.maxTick = 1000 / UPDATE_INTERVAL * GAME_SECONDS;
+	this.maxTick = secondsToTick(GAME_SECONDS);
 	this.candles = [];
 	this.bar = new StatusBar();
 	this.player = new Player(this);
+	this.health = new Health();
 }
 
 Game.prototype.update = function(){
@@ -49,6 +53,8 @@ Game.prototype.update = function(){
 
 	this.bar.set(this.tick / this.maxTick * 100);
 	this.bar.draw();
+
+	this.health.draw();
 
 	var that = this;
 	this.candles.forEach(function(candle, index){
@@ -99,12 +105,20 @@ Player.prototype.tick = function(){
 	this.vec.set(mouse.x, mouse.y);
 
 	this.update();
-	this.draw();
+
+	if(this.game.health.immortal <= 0 || this.game.health.immortal % secondsToTick(0.5) > secondsToTick(0.25)){
+		this.draw();
+	}
+	this.game.health.immortal--;
 
 	var that = this;
 	this.game.candles.forEach(function(candle){
-		if(candle.boundingBox.collidesWith(that.boundingBox)){
-			console.log('collide!');
+		if(that.game.health.immortal <= 0){
+			if(candle.boundingBox.collidesWith(that.boundingBox)){
+				that.game.health.harm();
+				that.game.health.immortal = secondsToTick(IMMORTAL_SECONDS);
+				console.log('collide!');
+			}
 		}
 	});
 };
@@ -213,6 +227,39 @@ StatusBar.prototype.draw = function(){
 	ctx.fill();
 };
 
+function Health(){
+	this.vec = new Vector2(window.innerWidth * (2/3), window.innerHeight * (9/10));
+
+	this.health = MAX_HEALTH;
+	this.immortal = 0;
+}
+
+Health.prototype.harm = function(v){
+	if(this.immortal > 0) return;
+
+	this.health -= v || 1;
+};
+
+Health.prototype.draw = function(){
+	//var x = this.vec.x;
+	var y = this.vec.y;
+
+	ctx.strokeStyle = 'red';
+	ctx.fillStyle = 'red';
+
+	for(var i = 0; i < MAX_HEALTH; i++){
+		var x = this.vec.x + i * HEART_SIZE + 10;
+
+		ctx.beginPath();
+		ctx.moveTo(x + HEART_SIZE / 2, y);
+
+		ctx.bezierCurveTo(x, y - HEART_SIZE * 0.3, x + HEART_SIZE / 4, y - HEART_SIZE, x + HEART_SIZE / 2, y - HEART_SIZE / 2);
+		ctx.bezierCurveTo(x + HEART_SIZE * 0.75, y - HEART_SIZE, x + HEART_SIZE, y - HEART_SIZE * 0.3, x + HEART_SIZE / 2, y);
+
+		this.health > i ? ctx.fill() : ctx.stroke();
+	}
+};
+
 function Vector2(x, y){
 	this.x = x;
 	this.y = y;
@@ -273,3 +320,7 @@ BoundingBox.prototype.set = function(minX, minY, maxX, maxY){
 
 	return this;
 };
+
+function secondsToTick(sec){
+	return 1000 / UPDATE_INTERVAL * sec;
+}
