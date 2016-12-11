@@ -1,8 +1,15 @@
-var MAX_CANDLES = 30;
+var MAX_CANDLES = 40;
 var CANDLE_WIDTH = 10;
 var CANDLE_HEIGHT = 60;
 var UPDATE_INTERVAL = 20;
+var GAME_SECONDS = 60;
 var deg2rad = Math.PI / 180;
+
+var mouse = {x: 0, y: 0};
+document.onmousemove = function(e){
+	mouse.x = e.pageX;
+	mouse.y = e.pageY;
+};
 
 var canvas = null, ctx = null;
 var games = [];
@@ -29,9 +36,10 @@ function Game(){
 	games.push(this);
 
 	this.tick = 0;
-	this.maxTick = 1000 / UPDATE_INTERVAL * 60;
+	this.maxTick = 1000 / UPDATE_INTERVAL * GAME_SECONDS;
 	this.candles = [];
 	this.bar = new StatusBar();
+	this.player = new Player(this);
 }
 
 Game.prototype.update = function(){
@@ -51,6 +59,8 @@ Game.prototype.update = function(){
 		}
 	});
 
+	this.player.tick();
+
 	if(this.candles.length < MAX_CANDLES && Math.random() < 0.5){ // 50%
 		var random = Math.random();
 
@@ -68,6 +78,39 @@ Game.prototype.update = function(){
 				new Vector2(window.innerWidth + x, Math.floor(Math.random() * window.innerHeight))));
 		}
 	}
+};
+
+function Player(game){
+	this.game = game;
+
+	this.vec = new Vector2(window.innerWidth / 2, window.innerHeight / 2);
+	this.scale = new Vector2(40, 40);
+}
+
+Player.prototype.update = function(){
+	if(!this.boundingBox){
+		this.boundingBox = new BoundingBox(0, 0, 0, 0);
+	}
+
+	this.boundingBox.set(this.vec.x - this.scale.x/2, this.vec.y - this.scale.y/2, this.vec.x + this.scale.x/2, this.vec.y + this.scale.y/2);
+};
+
+Player.prototype.tick = function(){
+	this.vec.set(mouse.x, mouse.y);
+
+	this.update();
+	this.draw();
+
+	var that = this;
+	this.game.candles.forEach(function(candle){
+		if(candle.boundingBox.collidesWith(that.boundingBox)){
+			console.log('collide!');
+		}
+	});
+};
+
+Player.prototype.draw = function(){
+	ctx.fillRect(this.boundingBox.minX, this.boundingBox.minY, this.boundingBox.maxX - this.boundingBox.minX, this.boundingBox.maxY - this.boundingBox.minY);
 };
 
 function Candle(pos, to){
@@ -137,6 +180,11 @@ Candle.prototype.draw = function(){
 
 	ctx.fillStyle = 'red';
 	ctx.fill();
+
+
+	// TEST
+	ctx.fillStyle = 'aqua';
+	//ctx.fillRect(this.boundingBox.minX, this.boundingBox.minY, this.boundingBox.maxX - this.boundingBox.minX, this.boundingBox.maxY - this.boundingBox.minY);
 };
 
 function StatusBar(){
@@ -177,6 +225,11 @@ Vector2.prototype.add = function(x, y){
 	return this;
 };
 
+Vector2.prototype.set = function(x, y){
+	this.x = x || 0;
+	this.y = y || 0;
+};
+
 function BoundingBox(minX, minY, maxX, maxY){
 	if(maxX < minX){
 		minX = [minX, maxX = minX][0];
@@ -197,14 +250,22 @@ function BoundingBox(minX, minY, maxX, maxY){
  * @param bb BoundingBox
  */
 BoundingBox.prototype.collidesWith = function(bb){
-	if(this.minX < bb.minX && bb.minX < this.maxX){
-		return this.minY < bb.minY && bb.minY < this.maxY;
+	if(this.minX < bb.minX && bb.minX < this.maxX || this.minX < bb.maxX && bb.maxX < this.maxX){
+		return this.minY < bb.minY && bb.minY < this.maxY || this.minY < bb.maxY && bb.maxY < this.maxY;
 	}
 
 	return false;
 };
 
 BoundingBox.prototype.set = function(minX, minY, maxX, maxY){
+	if(maxX < minX){
+		minX = [minX, maxX = minX][0];
+	}
+
+	if(maxY < minY){
+		minY = [minY, maxY = minY][0];
+	}
+
 	this.minX = minX || this.minX;
 	this.minY = minY || this.minY;
 	this.maxX = maxX || this.maxX;
