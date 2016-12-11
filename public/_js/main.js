@@ -621,6 +621,8 @@ function submitName(){
 					}
 					game.token = res.token;
 					game.start();
+
+					elements.name.value = '';
 				}else{
 					elements.info.innerHTML = '에러가 있는 것 같습니다.';
 				}
