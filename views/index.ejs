@@ -8,6 +8,11 @@
     <script src="/_js/main.js"></script>
 </head>
 <body>
-    <canvas id="main"></canvas>
+<canvas id="main"></canvas>
+<div id="nameholder" class="name" align="center">
+    <input id="name" type="text" autocomplete="off" placeholder="이름"></input><br>
+    <button onclick="submitName()" class="button" maxlength="15">시작!</button><br>
+    <p id="info" style="color: red"></p>
+</div>
 </body>
 </html>

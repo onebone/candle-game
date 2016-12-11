@@ -47,6 +47,12 @@ var canvas = null, ctx = null;
 var game = null;
 
 window.onload = function(){
+	elements = {
+		name: document.getElementById('name'), // input field
+		info: document.getElementById('info'), // paragraph,
+		nameholder: document.getElementById('nameholder'), // div
+	};
+
 	canvas = document.getElementById('main');
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
@@ -59,12 +65,6 @@ window.onload = function(){
 	setInterval(update, UPDATE_INTERVAL);
 
 	new Game();
-
-	document.addEventListener('keydown', function(){
-		if(game.status === STATUS_PREVIEW){
-			game.start();
-		}
-	});
 };
 
 function update(){
@@ -84,6 +84,8 @@ function Game(){
 	this.bar = new StatusBar();
 	this.player = new Player(this);
 	this.health = new Health();
+
+	this.token = null;
 
 	this.changeStatus(STATUS_PREVIEW);
 
@@ -175,10 +177,6 @@ Game.prototype.update = function(){
 		this.draw();
 		this.bar.draw();
 		this.health.draw();
-
-		setFontSize(50);
-		ctx.fillStyle = 'black';
-		ctx.fillText('시작하려면 아무 키나 누르세요', window.innerWidth/2, window.innerHeight/2);
 		return;
 	}
 
@@ -196,10 +194,33 @@ Game.prototype.changeStatus = function(status){
 	this.status = status;
 	this.tick = 0;
 
-	if(this.status === STATUS_PREVIEW){
-		this.health.health = MAX_HEALTH;
-		this.bar.set(0);
-		this.score = 0;
+	switch(this.status){
+		case STATUS_PREVIEW:
+			this.health.health = MAX_HEALTH;
+			this.bar.set(0);
+			this.score = 0;
+			this.lastScore = 0;
+
+			elements.nameholder.style = '';
+			break;
+		case STATUS_COUNTDOWN:
+			elements.nameholder.style = 'display: none;';
+			break;
+		case STATUS_REVIEW:
+			var xhr = new XMLHttpRequest();
+			xhr.open('POST', '/score', true);
+			xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+			xhr.onreadystatechange = function(){
+				if(xhr.readyState === XMLHttpRequest.DONE){
+					var res = JSON.parse(xhr.responseText);
+
+					if(!res.status){
+						alert(res.message || '알 수 없는 이유로 점수 저장 실패 ㅠㅠ');
+					}
+				}
+			};
+			xhr.send('score='+ this.score +'&token=' + this.token);
+			break;
 	}
 };
 
@@ -294,10 +315,14 @@ Player.prototype.tick = function(){
 		distance.push(candle.vec.distance(that.vec));
 	});
 
-	if(this.game.tick % secondsToTick(1) === 0){
-		distance.sort();
-		for(var i = 0; i < Math.min(3, distance.length); i++){
-			this.game.score += Math.ceil(distance[i] * 0.25);
+	if(this.game.status === STATUS_ONGOING){
+		if(this.game.lastScore - this.game.score > 2500 * secondsToTick(1)) this.game.score = 0;
+
+		if(this.game.tick % secondsToTick(1) === 0){
+			distance.sort();
+			for(var i = 0; i < Math.min(3, distance.length); i++){
+				this.game.score += Math.ceil(distance[i] * 0.25);
+			}
 		}
 	}
 };
@@ -568,4 +593,42 @@ function tickToSeconds(tick){
 
 function setFontSize(size){
 	ctx.font = ctx.font.replace(/\d+px/, size + 'px');
+}
+
+var elements = {
+	// info: paragraph
+	// name: input field
+};
+
+function submitName(){
+	if(game.status === STATUS_PREVIEW){
+		if(!elements.name.value){
+			elements.info.innerHTML = '이름을 입력해주세요';
+			return;
+		}
+
+		var xhr = new XMLHttpRequest();
+		xhr.open('POST', '/request', true);
+		xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+		xhr.onreadystatechange = function(){
+			if(xhr.readyState === XMLHttpRequest.DONE){
+				var res = JSON.parse(xhr.responseText);
+
+				if(res.status){
+					if(!res.token){
+						elements.info.innerHTML = '서버가 올바르지 않은 응답을 했습니다.';
+						return;
+					}
+					game.token = res.token;
+					game.start();
+				}else{
+					elements.info.innerHTML = '에러가 있는 것 같습니다.';
+				}
+			}
+		};
+
+		var data = new FormData();
+		data.append('name', elements.name.value);
+		xhr.send('name='+elements.name.value);
+	}
 }
