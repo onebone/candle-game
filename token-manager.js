@@ -3,7 +3,7 @@ const crypto = require('crypto');
 
 const connection = mysql.createConnection({
 	host:       process.env.host || 'localhost',
-	user:       process.env.user || 'onebone',
+	user:       process.env.user || 'root',
 	password:   process.env.password || '1234',
 	database:   process.env.database || 'candle'
 });
@@ -36,7 +36,7 @@ class ScoreManager{
 		if(this.tokens[token]){
 			score = parseInt(score);
 
-			connection.query(`INSERT INTO scores (name, time, score) VALUES (${connection.escape(this.tokens[token][0])}, 
+			connection.query(`INSERT INTO scores (name, time, score) VALUES (${connection.escape(this.tokens[token][0])},
 								${connection.escape(this.tokens[token][1])},
 								${connection.escape(score)})`);
 			this.tokens[token] = undefined;

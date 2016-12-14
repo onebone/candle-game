@@ -12,6 +12,11 @@ var STATUS_COUNTDOWN = 1;
 var STATUS_ONGOING = 2;
 var STATUS_REVIEW = 3;
 
+var MESSAGES = {
+	game_score: '점수: ',
+	game_over: '게임 종료'
+};
+
 var LEVELS = [
 	{ // 1
 		speed:  5,
@@ -46,6 +51,9 @@ document.onmousemove = function(e){
 var canvas = null, ctx = null;
 var game = null;
 
+var img = new Image();
+img.src = "/_img/plqyer.png";
+
 window.onload = function(){
 	elements = {
 		name: document.getElementById('name'), // input field
@@ -74,7 +82,7 @@ function update(){
 	game.update();
 }
 
-function Game(){
+function Game(name){
 	//games.push(this);
 	game = this;
 
@@ -82,8 +90,10 @@ function Game(){
 	this.maxTick = secondsToTick(GAME_SECONDS);
 	this.candles = [];
 	this.bar = new StatusBar();
-	this.player = new Player(this);
+	this.player = new Player(this, name);
 	this.health = new Health();
+
+	this.name = '';
 
 	this.token = null;
 
@@ -233,12 +243,13 @@ Game.prototype.countdown = function(sec){
 Game.prototype.showResult = function(){
 	if(this.status !== STATUS_REVIEW) return;
 
-	ctx.fillStyle = 'yellow';
+	ctx.fillStyle = 'aqua';
 	ctx.fillRect(this.field.left, this.field.top, this.field.right - this.field.left, this.field.bottom - this.field.top);
 	ctx.fillStyle = 'white';
 
 	setFontSize(100);
-	ctx.fillText(this.score + '', window.innerWidth/2, window.innerHeight/2);
+	ctx.fillText(MESSAGES.game_over, window.innerWidth/2, window.innerHeight/2 + 150);
+	ctx.fillText(MESSAGES.game_score + this.score, window.innerWidth/2, window.innerHeight/2 - 150);
 };
 
 Game.prototype.draw = function(){
@@ -254,7 +265,9 @@ Game.prototype.draw = function(){
 
 	ctx.fillStyle = 'black';
 	setFontSize(50);
-	ctx.fillText(this.score + '', window.innerWidth - 100, 50);
+	ctx.fillText(this.score, window.innerWidth - 100, 50);
+	setFontSize(25);
+	ctx.fillText(this.name, window.innerWidth - 100, 100);
 };
 
 function Player(game){
@@ -328,7 +341,8 @@ Player.prototype.tick = function(){
 };
 
 Player.prototype.draw = function(){
-	ctx.fillRect(this.boundingBox.minX, this.boundingBox.minY, this.boundingBox.maxX - this.boundingBox.minX, this.boundingBox.maxY - this.boundingBox.minY);
+	ctx.drawImage(img, this.boundingBox.minX, this.boundingBox.minY, this.boundingBox.maxX - this.boundingBox.minX, this.boundingBox.maxY - this.boundingBox.minY);
+	//ctx.fillRect(this.boundingBox.minX, this.boundingBox.minY, this.boundingBox.maxX - this.boundingBox.minX, this.boundingBox.maxY - this.boundingBox.minY);
 };
 
 function Candle(pos, to){
@@ -620,6 +634,7 @@ function submitName(){
 						return;
 					}
 					game.token = res.token;
+					game.name = elements.name.value;
 					game.start();
 
 					elements.name.value = '';
