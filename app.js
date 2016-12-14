@@ -59,6 +59,22 @@ app.post('/score', (req, res) => {
 	}
 });
 
+app.post('/rank', (req, res) => {
+	manager.getTopPlayers()
+		.then((val) => {
+			res.send(JSON.stringify({
+				'status': true,
+				'data': val
+			}));
+		}).catch((err) => {
+			console.error(err);
+			res.send(JSON.stringify({
+				'status': false,
+				'message': '랭크를 불러오는 데 실패하였습니다.'
+			}))
+		});
+});
+
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
 	var err = new Error('Not Found');

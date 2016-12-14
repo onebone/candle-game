@@ -10,6 +10,15 @@ canvas { display:block; }
 	text-align: center;
 }
 
+.rank{
+	position: fixed;
+	bottom: 10%;
+	right: 10%;
+
+	border-radius: 10px;
+	background-color: rgba(211, 211, 211, 200);
+}
+
 ul {
 	width: 540px;
 	margin: 0 auto;

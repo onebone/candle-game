@@ -59,6 +59,7 @@ window.onload = function(){
 		name: document.getElementById('name'), // input field
 		info: document.getElementById('info'), // paragraph,
 		nameholder: document.getElementById('nameholder'), // div
+		rank: document.getElementById('ranktable')
 	};
 
 	canvas = document.getElementById('main');
@@ -212,6 +213,28 @@ Game.prototype.changeStatus = function(status){
 			this.lastScore = 0;
 
 			elements.nameholder.style = '';
+
+			var xhr = new XMLHttpRequest();
+			xhr.open('POST', '/rank', true);
+			xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+			xhr.onreadystatechange = function(){
+				if(xhr.readyState === XMLHttpRequest.DONE){
+					var res = JSON.parse(xhr.responseText);
+
+					if(!res.status){
+						elements.info.innerHTML = '순위 동기화 실패';
+					}else{
+						var data = res.data;
+
+						elements.rank.innerHTML = '<tr><th>이름</th><th>순위</th></tr>';
+						data.forEach(function(val){
+							elements.rank.innerHTML += '<tr><td>' + val.name + '</td><td>' + val.score + '</td></tr>';
+						});
+					}
+				}
+			};
+
+			xhr.send();
 			break;
 		case STATUS_COUNTDOWN:
 			elements.nameholder.style = 'display: none;';
