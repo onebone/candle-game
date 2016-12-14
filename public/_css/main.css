@@ -10,6 +10,14 @@ canvas { display:block; }
 	text-align: center;
 }
 
+.title{
+	position: fixed;
+	top: 35%;
+	left: 40%;
+
+	font-size: 3rem;
+}
+
 .rank{
 	position: fixed;
 	bottom: 10%;
