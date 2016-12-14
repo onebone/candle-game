@@ -226,7 +226,7 @@ Game.prototype.changeStatus = function(status){
 					}else{
 						var data = res.data;
 
-						elements.rank.innerHTML = '<tr><th>이름</th><th>순위</th></tr>';
+						elements.rank.innerHTML = '<tr><th>이름</th><th>점수</th></tr>';
 						data.forEach(function(val){
 							elements.rank.innerHTML += '<tr><td>' + val.name + '</td><td>' + val.score + '</td></tr>';
 						});
