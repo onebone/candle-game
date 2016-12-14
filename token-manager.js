@@ -26,6 +26,8 @@ class ScoreManager{
 	}
 
 	addToken(player){
+		if(typeof player !== 'string' || player.length <= 0 || player.length > 15) return false;
+
 		var token = crypto.randomBytes(64).toString('hex');
 
 		this.tokens[token] = [player, Date.now()];

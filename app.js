@@ -33,10 +33,18 @@ app.post('/request', (req, res) => {
 		}));
 		return;
 	}
-	res.send(JSON.stringify({
-		'status': true,
-		'token': manager.addToken(req.body.name)
-	}));
+
+	var token;
+	if(token = manager.addToken(req.body.name)){
+		res.send(JSON.stringify({
+			'status': true,
+			'token': token
+		}));
+	}else{
+		res.send(JSON.stringify({
+			'status': false
+		}));
+	}
 });
 
 app.post('/score', (req, res) => {

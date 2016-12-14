@@ -661,6 +661,7 @@ function submitName(){
 					game.start();
 
 					elements.name.value = '';
+					elements.info.innerHTML = '';
 				}else{
 					elements.info.innerHTML = '에러가 있는 것 같습니다.';
 				}
