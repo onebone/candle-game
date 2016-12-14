@@ -57,7 +57,7 @@ class ScoreManager{
 					}else break;
 				}
 
-				resolve(rows);
+				resolve(rank);
 			});
 		});
 	}
