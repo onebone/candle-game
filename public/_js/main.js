@@ -213,6 +213,7 @@ Game.prototype.changeStatus = function(status){
 			this.lastScore = 0;
 
 			elements.nameholder.style = '';
+			this.name = '';
 
 			var xhr = new XMLHttpRequest();
 			xhr.open('POST', '/rank', true);
@@ -227,8 +228,8 @@ Game.prototype.changeStatus = function(status){
 						var data = res.data;
 
 						elements.rank.innerHTML = '<tr><th>이름</th><th>점수</th></tr>';
-						Object.keys(data).forEach(function(name){
-							elements.rank.innerHTML += '<tr><td>' + name + '</td><td>' + data[name] + '</td></tr>';
+						Object.keys(data).reverse().forEach(function(score){
+							elements.rank.innerHTML += '<tr><td>' + data[score] + '</td><td>' + score + '</td></tr>';
 						});
 					}
 				}

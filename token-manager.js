@@ -1,3 +1,5 @@
+'use strict';
+
 const mysql = require('mysql');
 const crypto = require('crypto');
 
@@ -49,13 +51,13 @@ class ScoreManager{
 
 	getTopPlayers(top = 5){
 		return new Promise((resolve, reject) =>{
-			connection.query(`SELECT MAX(score) as score, name FROM scores GROUP BY name ORDER BY score DESC, name;`, (err, rows, fields) => {
+			connection.query(`SELECT MAX(score) as score, name FROM scores GROUP BY name ORDER BY score DESC`, (err, rows, fields) => {
 				if(err) return reject(err);
 
 				let rank = {};
 				for(const row of rows){
 					if(top-- > 0){
-						rank[row.name] = row.score;
+						rank[row.score] = row.name;
 					}else break;
 				}
 
